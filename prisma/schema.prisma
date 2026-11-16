@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+model FreeShippingSettings {
+  id                    String   @id @default(cuid())
+  shop                  String
+  name                  String   @default("Free Shipping Bar")
+  enabled               Boolean  @default(true)
+  goal                  Float    @default(50)
+  positions             String   @default("[\"Product page\"]")
+  message               String   @default("You're only {amount} away from free shipping!")
+  successMessage        String   @default("Congratulations! You've unlocked free shipping!")
+  showMessage           Boolean  @default(true)
+  showProgress          Boolean  @default(true)
+  showCartTotal         Boolean  @default(true)
+  backgroundColor       String   @default("#FFFFFF")
+  progressColor         String   @default("#008060")
+  textColor             String   @default("#000000")
+  backgroundType        String   @default("solid")
+  gradientColor1        String   @default("#DDDDDD")
+  gradientColor2        String   @default("#FFFFFF")
+  gradientAngle         Int      @default(90)
+  containerWidth        Int      @default(100)
+  containerWidthUnit    String   @default("%")
+  containerHeight       Int      @default(100)
+  progressWidth         Int      @default(100)
+  barHeight             Int      @default(12)
+  contentAlignment      String   @default("center")
+  paddingTop            Int      @default(12)
+  paddingBottom         Int      @default(12)
+  paddingLeft           Int      @default(12)
+  paddingRight          Int      @default(12)
+  borderRadius          Int      @default(6)
+  upsellEnabled         Boolean  @default(false)
+  upsellProductIds      String   @default("[]")
+  upsellShowArrows      Boolean  @default(true)
+  upsellAutoSlide       Boolean  @default(true)
+  upsellSlideInterval   Int      @default(5)
+  upsellProductsPerView Int      @default(2)
+  geolocationEnabled    Boolean  @default(false)
+  targetCountries       String   @default("[]")
+  excludedProductIds    String   @default("[]")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([shop])
+}
+
+model ShopSubscription {
+  id                    String    @id @default(cuid())
+  shop                  String    @unique
+  plan                  String    @default("FREE")
+  status                String    @default("ACTIVE")
+  shopifySubscriptionId String?
+  trialEndsAt           DateTime?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model UsageRecord {
+  id          String   @id @default(cuid())
+  shop        String
+  periodStart DateTime
+  periodEnd   DateTime
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shop, periodStart])
+  @@index([shop, periodEnd])
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  shop        String
+  barId       String
+  eventType   String
+  visitorId   String?
+  sessionId   String?
+  countryCode String?
+  orderId     String?
+  value       Float?
+  currency    String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  @@index([shop, createdAt])
+  @@index([shop, barId, createdAt])
+  @@index([shop, eventType, createdAt])
+  @@index([shop, orderId])
+}

@@ -1,0 +1,1482 @@
+<div
+  id="FreeShippingBar-{{ block.id }}"
+  class="fsb-container"
+  data-page-type="{{ request.page_type }}"
+  data-country-code="{{ localization.country.iso_code | escape }}"
+  data-configured-bar-id="{{ block.settings.bar_id | escape }}"
+  data-configured-placement="{{ block.settings.placement | escape }}"
+>
+  <!-- Template used to create individual free shipping bar instances -->
+  <div class="fsb-template" style="display: none !important;">
+    <div class="fsb-root" style="display: none;">
+      <p class="fsb-message"></p>
+
+      <div class="fsb-track">
+        <div class="fsb-fill"></div>
+      </div>
+
+      <p class="fsb-total"></p>
+
+      <!-- Upsell Products Carousel -->
+      <div class="fsb-upsell" style="display: none;">
+      {% comment %}
+        <div class="fsb-upsell-header">
+          <p class="fsb-upsell-title">You may also like</p>
+        </div>
+        {% endcomment %}
+
+        <div class="fsb-upsell-row">
+          <button type="button" class="fsb-upsell-prev" aria-label="Previous products">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+
+          <div class="fsb-upsell-viewport">
+            <div class="fsb-upsell-track"></div>
+          </div>
+
+          <button type="button" class="fsb-upsell-next" aria-label="Next products">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container for rendered inline bars -->
+  <div class="fsb-bars-wrapper"></div>
+</div>
+
+<style>
+  .fsb-container {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fsb-bars-wrapper {
+    display: block;
+    width: 100%;
+  }
+
+  .fsb-root {
+    box-sizing: border-box;
+    width: calc(100% - 24px);
+    max-width: 720px;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    margin: 16px auto !important;
+    padding: 16px 20px;
+    font-family: inherit;
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+
+  .fsb-root *,
+  .fsb-root *::before,
+  .fsb-root *::after {
+    box-sizing: border-box;
+  }
+
+  .fsb-root .fsb-message {
+    display: block;
+    width: 100%;
+    margin: 0 0 14px;
+    font-size: clamp(12px, 2vw, 14px);
+    line-height: 1.6;
+    font-weight: 600;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .fsb-root .fsb-track {
+    display: block;
+    width: 100%;
+    height: 8px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.10);
+    border-radius: 50px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .fsb-root .fsb-fill {
+    display: block;
+    width: 0%;
+    height: 100%;
+    border-radius: 50px;
+    transition: width 0.5s ease-in-out;
+  }
+
+  .fsb-root .fsb-total {
+    display: block;
+    width: 100%;
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 500;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    opacity: 0.75;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] {
+    width: 100%;
+    max-width: 100%;
+    margin: 10px 0 !important;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-message {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-total {
+    font-size: 11px;
+  }
+
+  /* Upsell Products Carousel */
+  .fsb-root .fsb-upsell {
+    width: 100%;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .fsb-root .fsb-upsell-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .fsb-root .fsb-upsell-title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.75;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .fsb-root .fsb-upsell-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 4px;
+    position: relative;
+  }
+
+  .fsb-root .fsb-upsell-prev,
+  .fsb-root .fsb-upsell-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: inherit;
+    transition: opacity 0.15s ease;
+  }
+
+  .fsb-root .fsb-upsell-prev:hover,
+  .fsb-root .fsb-upsell-next:hover {
+    opacity: 0.7;
+    background: transparent !important;
+  }
+
+  .fsb-root .fsb-upsell-prev svg,
+  .fsb-root .fsb-upsell-next svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+  }
+
+  .fsb-root .fsb-upsell-viewport {
+    flex: 1 1 0%;
+    min-width: 0;
+    width: auto;
+    overflow: hidden;
+  }
+
+  .fsb-root .fsb-upsell-track {
+    display: flex;
+    transition: transform 0.3s ease-in-out;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .fsb-upsell-card {
+    flex: 0 0 var(--fsb-card-width, 50%);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    text-align: left;
+    min-width: 0;
+  }
+
+  .fsb-upsell-card img {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .fsb-upsell-card-details {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: #000000;
+  }
+
+  .fsb-upsell-card-title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: #000000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fsb-upsell-card-price {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #000000;
+  }
+
+  .fsb-upsell-add {
+    margin-top: 2px;
+    padding: 4px 10px;
+    background: #000000;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.3;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: opacity 0.15s ease;
+  }
+
+  .fsb-upsell-add:hover {
+    opacity: 0.85;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-upsell {
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-upsell-card {
+    padding: 6px;
+    gap: 6px;
+    background: #ffffff;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-upsell-card img {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-upsell-card-title {
+    font-size: 10px;
+    color: #000000;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-upsell-card-price {
+    font-size: 10px;
+    color: #000000;
+  }
+
+  .fsb-root[data-fsb-cart-drawer="true"] .fsb-upsell-add {
+    padding: 3px 8px;
+    font-size: 10px;
+    line-height: 1.4;
+    cursor: pointer;
+    background: #000000;
+    color: #ffffff;
+  }
+
+  .fsb-upsell-add:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 480px) {
+    .fsb-root {
+      padding: 13px 14px;
+      margin: 12px auto !important;
+    }
+
+    .fsb-root .fsb-message {
+      font-size: 13px;
+    }
+
+    .fsb-root .fsb-total {
+      font-size: 11px;
+    }
+
+    .fsb-upsell-card img {
+      width: 58px;
+      height: 58px;
+      flex-basis: 58px;
+    }
+  }
+</style>
+
+<script>
+(function () {
+  const root = document.getElementById(
+    "FreeShippingBar-{{ block.id }}"
+  );
+
+  if (!root || root.dataset.fsbInitialized === "true") return;
+
+  root.dataset.fsbInitialized = "true";
+
+  let inlineBars = [];             // Array of { node, settings }
+  let drawerBars = [];             // Array of { node, settings }
+  let drawerSettingsArray = [];    // All cart drawer settings
+  let lastInlineSig = "";
+  let lastDrawerSig = "";
+  let lastCartSignature = null;
+  let lastItemCount = null;
+  let isUpsellAdding = false;
+  let checkingCart = false;
+  let refreshingSettings = false;
+  let observer = null;
+  let updateTimer = null;
+
+  // Analytics: track each bar only once per page view.
+  window.__fsbTrackedBarViews = window.__fsbTrackedBarViews || new Set();
+  const trackedBarViews = window.__fsbTrackedBarViews;
+
+function getOrCreateTrackingId(storageType, key) {
+  try {
+    const storage = window[storageType];
+
+    let id = storage.getItem(key);
+
+    if (!id) {
+      id = window.crypto?.randomUUID
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+      storage.setItem(key, id);
+    }
+
+    return id;
+  } catch (error) {
+    return null;
+  }
+}
+
+const visitorId = getOrCreateTrackingId(
+  "localStorage",
+  "fsb_visitor_id"
+);
+
+const sessionId = getOrCreateTrackingId(
+  "sessionStorage",
+  "fsb_session_id"
+);
+
+async function trackAnalyticsEvent(barId, eventType, metadata = {}) {
+  const resolvedBarId =
+    barId ||
+    root.dataset.configuredBarId ||
+    (inlineBars[0] && inlineBars[0].settings && inlineBars[0].settings.id) ||
+    (drawerBars[0] && drawerBars[0].settings && drawerBars[0].settings.id);
+
+  if (!resolvedBarId) {
+    console.warn("FSB: Cannot track event without barId:", eventType);
+    return;
+  }
+
+  try {
+    const res = await fetch("/apps/free-shipping", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      keepalive: true,
+      body: JSON.stringify({
+        barId: String(resolvedBarId),
+        eventType,
+        visitorId,
+        sessionId,
+        countryCode: root.dataset.countryCode || null,
+        metadata
+      })
+    });
+
+    if (!res.ok) {
+      console.warn("FSB: Analytics tracking response error:", res.status);
+    }
+  } catch (error) {
+    console.error("Analytics tracking error:", error);
+  }
+}
+
+function trackBarView(barId, placement) {
+  if (!barId || trackedBarViews.has(barId)) return;
+
+  trackedBarViews.add(barId);
+
+  trackAnalyticsEvent(barId, "bar_view", {
+    placement
+  });
+}
+
+function trackGoalReached(barId, cartToken) {
+  if (!barId) return;
+
+  const sessionKey = `fsb_goal_${barId}_${cartToken || "session"}`;
+
+  // 1. Cross-block deduplication on same page
+  window.__fsbTrackedGoals = window.__fsbTrackedGoals || new Set();
+  if (window.__fsbTrackedGoals.has(sessionKey)) return;
+
+  // 2. Session storage deduplication across page navigations
+  try {
+    if (sessionStorage.getItem(sessionKey)) {
+      window.__fsbTrackedGoals.add(sessionKey);
+      return;
+    }
+  } catch (e) {}
+
+  window.__fsbTrackedGoals.add(sessionKey);
+  try {
+    sessionStorage.setItem(sessionKey, "true");
+  } catch (e) {}
+
+  trackAnalyticsEvent(barId, "cart_goal_reached", {
+    path: window.location.pathname
+  });
+}
+
+function attachBarClickTracking(node, barId) {
+  if (!node || !barId) return;
+  node.addEventListener("click", (e) => {
+    if (e.target.closest(".fsb-upsell")) return;
+    trackAnalyticsEvent(barId, "bar_click");
+  }, { passive: true });
+}
+
+  const pageType = root.dataset.pageType;
+
+  const DRAWER_SELECTORS = [
+    "cart-drawer",
+    "#CartDrawer",
+    ".cart-drawer",
+    "[data-cart-drawer]",
+    "[data-cart-drawer-container]",
+    "[id*='CartDrawer']",
+    "[class*='cart-drawer']",
+    "[class*='cartDrawer']",
+    "[data-drawer*='cart']"
+  ];
+
+  const DRAWER_CONTENT_SELECTORS = [
+    "[data-cart-drawer-content]",
+    ".cart-drawer__content",
+    "[class*='cart-drawer__content']",
+    ".drawer__inner",
+    "[class*='drawer__inner']",
+    ".drawer__contents",
+    "[role='document']"
+  ];
+
+  function getTemplateNode() {
+    return root.querySelector(".fsb-template .fsb-root");
+  }
+
+  function getBarsWrapper() {
+    return root.querySelector(".fsb-bars-wrapper");
+  }
+
+  function getNumber(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function parsePositionsArray(pos) {
+    if (Array.isArray(pos)) return pos;
+    if (typeof pos === "string") {
+      try {
+        const parsed = JSON.parse(pos);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    return pos ? [pos] : [];
+  }
+
+  function barMatchesPlacement(bar, placement) {
+    if (!bar || !bar.enabled) return false;
+    const positions = parsePositionsArray(bar.positions);
+
+    if (placement === "Announcement bar") {
+      return positions.includes("Announcement bar");
+    }
+    if (placement === "Product page") {
+      return positions.includes("Product page") && pageType === "product";
+    }
+    if (placement === "Cart page") {
+      return positions.includes("Cart page") && pageType === "cart";
+    }
+    if (placement === "Cart drawer") {
+      return false; 
+    }
+    
+    const onProduct = positions.includes("Product page") && pageType === "product";
+    const onCart = positions.includes("Cart page") && pageType === "cart";
+    const onAnnounce = positions.includes("Announcement bar");
+    return onProduct || onCart || onAnnounce;
+  }
+
+function barMatchesCountry(bar) {
+  if (!bar) return false;
+
+  if (bar.geolocationEnabled !== true) {
+    return true;
+  }
+
+  const visitorCountry = String(
+    root.dataset.countryCode || ""
+  ).toUpperCase();
+
+  const targetCountries = Array.isArray(bar.targetCountries)
+    ? bar.targetCountries.map((code) => String(code).toUpperCase())
+    : [];
+
+  if (targetCountries.length === 0) {
+    return false;
+  }
+
+  return targetCountries.includes(visitorCountry);
+}
+
+  function findCartDrawer() {
+    for (const selector of DRAWER_SELECTORS) {
+      const elements = document.querySelectorAll(selector);
+
+      for (const element of elements) {
+        if (
+          element.matches(
+            '[class*="overlay"], [class*="backdrop"]'
+          )
+        ) {
+          continue;
+        }
+
+        return element;
+      }
+    }
+
+    return null;
+  }
+
+  function findDrawerTarget(drawer) {
+    for (const selector of DRAWER_CONTENT_SELECTORS) {
+      const target = drawer.querySelector(selector);
+      if (target) return target;
+    }
+
+    return drawer;
+  }
+
+  // Apply dashboard settings to a single free shipping bar element.
+  function configureBar(bar, currentSettings) {
+    if (!bar || !currentSettings) return;
+
+    const isDrawer = bar.hasAttribute("data-fsb-cart-drawer");
+    const width = getNumber(currentSettings.containerWidth, 100);
+    const height = getNumber(currentSettings.containerHeight, 0);
+    const widthUnit = currentSettings.containerWidthUnit === "px" ? "px" : "%";
+
+    const alignment = [
+      "left",
+      "center",
+      "right"
+    ].includes(currentSettings.contentAlignment)
+      ? currentSettings.contentAlignment
+      : "center";
+
+    bar.style.display = "block";
+    bar.style.boxSizing = "border-box";
+
+    if (isDrawer) {
+      bar.style.width = "100%";
+      bar.style.maxWidth = "100%";
+      bar.style.margin = "10px 0";
+      bar.style.padding = "12px";
+    } else {
+      bar.style.width = `min(${width}${widthUnit}, calc(100% - 24px))`;
+      bar.style.maxWidth = "720px";
+      bar.style.margin = "16px auto";
+      bar.style.padding = `
+        ${getNumber(currentSettings.paddingTop, 12)}px
+        ${getNumber(currentSettings.paddingRight, 12)}px
+        ${getNumber(currentSettings.paddingBottom, 12)}px
+        ${getNumber(currentSettings.paddingLeft, 12)}px
+      `;
+    }
+
+    bar.style.height = "auto";
+    bar.style.minHeight = height > 0 ? height + "px" : "0";
+    bar.style.overflow = "visible";
+
+    const solidBg = currentSettings.backgroundColor || "#FFFFFF";
+    const bgType = String(currentSettings.backgroundType || "solid").toLowerCase();
+
+    if (
+      bgType === "gradient" &&
+      currentSettings.gradientColor1 &&
+      currentSettings.gradientColor2
+    ) {
+      const angle = getNumber(currentSettings.gradientAngle, 90);
+      bar.style.background = `linear-gradient(${angle}deg, ${currentSettings.gradientColor1}, ${currentSettings.gradientColor2})`;
+    } else {
+      bar.style.backgroundImage = "none";
+      bar.style.backgroundColor = solidBg;
+      bar.style.background = solidBg;
+    }
+
+    bar.style.color = currentSettings.textColor || "#000000";
+    bar.style.borderRadius = getNumber(currentSettings.borderRadius, 6) + "px";
+    bar.style.textAlign = alignment;
+
+    const track = bar.querySelector(".fsb-track");
+    const fill = bar.querySelector(".fsb-fill");
+    const message = bar.querySelector(".fsb-message");
+    const total = bar.querySelector(".fsb-total");
+
+    if (!track || !fill) return;
+
+    const progressWidth = Math.min(
+      100,
+      Math.max(0, getNumber(currentSettings.progressWidth, 100))
+    );
+
+    track.style.setProperty("width", progressWidth + "%", "important");
+    track.style.height = getNumber(currentSettings.barHeight, 12) + "px";
+    track.style.borderRadius = getNumber(currentSettings.borderRadius, 6) + "px";
+
+    fill.style.height = "100%";
+    fill.style.borderRadius = getNumber(currentSettings.borderRadius, 6) + "px";
+    fill.style.setProperty(
+      "background-color",
+      currentSettings.progressColor || "#008060",
+      "important"
+    );
+
+    if (message) {
+      message.style.display =
+        currentSettings.showMessage === false ? "none" : "block";
+    }
+
+    if (total) {
+      total.style.display =
+        currentSettings.showCartTotal === false ? "none" : "block";
+    }
+
+    track.style.display =
+      currentSettings.showProgress === false ? "none" : "block";
+  }
+
+  // Store autoplay timers separately for each bar.
+  let upsellIntervals = new WeakMap();
+
+  function clearUpsellInterval(bar) {
+    const existingInterval = upsellIntervals.get(bar);
+    if (existingInterval) {
+      clearInterval(existingInterval);
+      upsellIntervals.delete(bar);
+    }
+  }
+
+  function renderUpsellProducts(bar, shouldShow, currentSettings) {
+    if (!bar || !currentSettings) return;
+
+    const section = bar.querySelector(".fsb-upsell");
+    const track = bar.querySelector(".fsb-upsell-track");
+
+    if (!section || !track) return;
+
+    const products = currentSettings.upsellProducts || [];
+
+    if (
+      !shouldShow ||
+      !currentSettings.upsellEnabled ||
+      products.length === 0
+    ) {
+      section.style.display = "none";
+      clearUpsellInterval(bar);
+      return;
+    }
+
+    section.style.display = "block";
+
+    const productsPerView = Math.min(
+      products.length,
+      Math.max(
+        1,
+        getNumber(currentSettings.upsellProductsPerView, 2)
+      )
+    );
+
+    const gap = 10;
+    track.style.gap = gap + "px";
+
+    const cardWidth = `calc((100% - ${(productsPerView - 1) * gap}px) / ${productsPerView})`;
+    track.style.setProperty("--fsb-card-width", cardWidth);
+
+    const previousIndex = Number(track.dataset.index || 0);
+
+    // Render compact horizontal product rows.
+    track.innerHTML = products.map((product) => {
+      const image = product.image
+        ? `<img src="${escapeHTML(product.image)}" alt="${escapeHTML(product.imageAlt || product.title)}" loading="lazy">`
+        : "";
+
+      const price = product.price !== null
+        ? formatMoney(Number(product.price))
+        : "";
+
+      return `
+        <div class="fsb-upsell-card">
+          ${image}
+
+          <div class="fsb-upsell-card-details">
+            <p class="fsb-upsell-card-title">
+              ${escapeHTML(product.title)}
+            </p>
+
+            <p class="fsb-upsell-card-price">
+              ${price}
+            </p>
+
+            <button
+              type="button"
+              class="fsb-upsell-add"
+              data-variant-id="${escapeHTML(product.variantId || "")}"
+              ${product.variantId ? "" : "disabled"}
+            >
+              Add to cart
+            </button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Add product to Shopify cart.
+    track.querySelectorAll(".fsb-upsell-add").forEach((button) => {
+      button.onclick = async () => {
+        const variantId = button.dataset.variantId;
+        if (!variantId || button.disabled) return;
+
+        // Capture barId immediately in closure before any network calls or DOM changes
+        const targetBarId =
+          bar.dataset.fsbBarId ||
+          (currentSettings && currentSettings.id) ||
+          button.closest("[data-fsb-bar-id]")?.dataset.fsbBarId ||
+          root.dataset.configuredBarId;
+
+        trackAnalyticsEvent(targetBarId, "upsell_click", {
+          variantId
+        });
+
+        const originalText = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Adding...";
+        isUpsellAdding = true;
+
+        try {
+          const response = await fetch("/cart/add.js", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({
+              id: Number(variantId),
+              quantity: 1
+            })
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              result.description || "Unable to add product"
+            );
+          }
+
+          // Await tracking with the captured targetBarId so it completes before re-render
+          await trackAnalyticsEvent(targetBarId, "upsell_add_to_cart", {
+            variantId
+          });
+
+          button.textContent = "Added!";
+
+          await updateProgress();
+
+          document.dispatchEvent(
+            new CustomEvent("cart:updated", {
+              detail: result
+            })
+          );
+
+          document.dispatchEvent(
+            new CustomEvent("cart:refresh")
+          );
+
+        } catch (error) {
+          console.error("Upsell add-to-cart error:", error);
+          button.textContent = "Try again";
+        } finally {
+          button.disabled = false;
+
+          setTimeout(() => {
+            isUpsellAdding = false;
+            button.textContent = originalText;
+          }, 2000);
+        }
+      };
+    });
+
+    const maxIndex = Math.max(
+      0,
+      products.length - productsPerView
+    );
+
+    const index = Math.min(previousIndex, maxIndex);
+    track.dataset.index = index;
+
+    function moveCarousel(nextIndex) {
+      const next = Math.max(
+        0,
+        Math.min(nextIndex, maxIndex)
+      );
+
+      track.dataset.index = next;
+
+      const card = track.querySelector(".fsb-upsell-card");
+      if (!card) return;
+
+      const distance = card.getBoundingClientRect().width + gap;
+      track.style.transform = `translateX(-${next * distance}px)`;
+    }
+
+    moveCarousel(index);
+
+    const previousButton = section.querySelector(".fsb-upsell-prev");
+    const nextButton = section.querySelector(".fsb-upsell-next");
+
+    const showArrows =
+      currentSettings.upsellShowArrows !== false &&
+      maxIndex > 0;
+
+    previousButton.style.display = showArrows ? "flex" : "none";
+    nextButton.style.display = showArrows ? "flex" : "none";
+
+    previousButton.onclick = () => {
+      moveCarousel(Number(track.dataset.index) - 1);
+    };
+
+    nextButton.onclick = () => {
+      const current = Number(track.dataset.index);
+      moveCarousel(current >= maxIndex ? 0 : current + 1);
+    };
+
+    // Autoplay carousel.
+    const intervalSeconds = Math.max(
+      2,
+      getNumber(currentSettings.upsellSlideInterval, 5)
+    );
+
+    const intervalConfig = [
+      currentSettings.upsellAutoSlide,
+      intervalSeconds,
+      maxIndex
+    ].join("|");
+
+    const previousConfig = bar.dataset.fsbIntervalConfig || "";
+
+    if (previousConfig !== intervalConfig) {
+      clearUpsellInterval(bar);
+      bar.dataset.fsbIntervalConfig = intervalConfig;
+    }
+
+    if (
+      currentSettings.upsellAutoSlide === true &&
+      maxIndex > 0 &&
+      !upsellIntervals.has(bar)
+    ) {
+      const interval = setInterval(() => {
+        if (!bar.isConnected || section.style.display === "none") {
+          clearUpsellInterval(bar);
+          return;
+        }
+
+        const current = Number(track.dataset.index || 0);
+        moveCarousel(current >= maxIndex ? 0 : current + 1);
+      }, intervalSeconds * 1000);
+
+      upsellIntervals.set(bar, interval);
+    }
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
+
+  function formatMoney(amount) {
+    const currency =
+      window.Shopify?.currency?.active || "USD";
+
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency
+      }).format(amount);
+    } catch (error) {
+      return amount.toFixed(2) + " " + currency;
+    }
+  }
+
+  function renderProgress(cart, bar, currentSettings) {
+    if (!bar || !bar.isConnected || !currentSettings) return;
+
+    const goal = Number(currentSettings.goal);
+
+    if (!Number.isFinite(goal) || goal <= 0) {
+      bar.style.display = "none";
+      return;
+    }
+
+    const excludedIds = Array.isArray(currentSettings.excludedProductIds)
+      ? currentSettings.excludedProductIds.map((id) => String(id).split("/").pop())
+      : [];
+
+    let eligibleTotalPrice = cart && Number.isFinite(cart.total_price) ? cart.total_price : 0;
+    if (excludedIds.length > 0 && cart && Array.isArray(cart.items)) {
+      eligibleTotalPrice = cart.items.reduce((sum, item) => {
+        const pid = String(item.product_id || "");
+        if (excludedIds.includes(pid)) return sum;
+        return sum + (item.final_line_price ?? item.line_price ?? 0);
+      }, 0);
+    }
+
+    const cartValue = eligibleTotalPrice / 100;
+    const remaining = Math.max(0, goal - cartValue);
+
+    if (remaining === 0 && currentSettings.id) {
+      trackGoalReached(currentSettings.id, cart.token);
+    } else if (remaining > 0 && cartValue === 0 && currentSettings.id) {
+      // Cart reset (empty or order completed) - allow next cart to unlock goal
+      const sessionKey = `fsb_goal_${currentSettings.id}_${cart.token || "session"}`;
+      try {
+        sessionStorage.removeItem(sessionKey);
+      } catch (e) {}
+      if (window.__fsbTrackedGoals) {
+        window.__fsbTrackedGoals.delete(sessionKey);
+      }
+    }
+
+    // Render upsell products carousel whenever upsell is enabled on the bar
+    renderUpsellProducts(bar, true, currentSettings);
+
+    const progress = Math.min(
+      100,
+      Math.max(0, (cartValue / goal) * 100)
+    );
+
+    const message =
+      remaining > 0
+        ? String(
+            currentSettings.message ||
+            "You're only {amount} away from free shipping!"
+          ).replaceAll(
+            "{amount}",
+            formatMoney(remaining)
+          )
+        : String(
+            currentSettings.successMessage ||
+            "Congratulations! You've unlocked free shipping!"
+          );
+
+    const messageElement = bar.querySelector(".fsb-message");
+    const totalElement = bar.querySelector(".fsb-total");
+    const fill = bar.querySelector(".fsb-fill");
+
+    if (!messageElement || !totalElement || !fill) return;
+
+    messageElement.textContent = message;
+    totalElement.textContent = formatMoney(cartValue) + " / " + formatMoney(goal);
+
+    fill.style.setProperty("width", progress + "%", "important");
+    fill.style.setProperty(
+      "background-color",
+      currentSettings.progressColor || "#008060",
+      "important"
+    );
+  }
+
+  function getCartSignature(cart) {
+    return JSON.stringify({
+      total_price: cart.total_price,
+      item_count: cart.item_count,
+      items: cart.items.map((item) => ({
+        key: item.key,
+        quantity: item.quantity
+      }))
+    });
+  }
+
+  async function getCart() {
+    const response = await fetch("/cart.js", {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to fetch cart");
+    }
+
+    return response.json();
+  }
+
+  // Render all matching inline bars inside .fsb-bars-wrapper.
+  function renderInlineBars(barsList) {
+    const wrapper = getBarsWrapper();
+    const template = getTemplateNode();
+    if (!wrapper || !template) return;
+
+    // Clean existing inline bars
+    inlineBars.forEach((item) => {
+      clearUpsellInterval(item.node);
+      item.node.remove();
+    });
+    inlineBars = [];
+
+    if (!barsList || barsList.length === 0) {
+      wrapper.style.display = "none";
+      return;
+    }
+
+    wrapper.style.display = "block";
+
+    barsList.forEach((barSettings, index) => {
+      const node = template.cloneNode(true);
+      node.id = root.id + "-bar-" + (barSettings.id || index);
+      node.dataset.fsbBarId = barSettings.id || String(index);
+      node.style.display = "block";
+
+      wrapper.appendChild(node);
+      configureBar(node, barSettings);
+      attachBarClickTracking(node, barSettings.id);
+
+      inlineBars.push({ node, settings: barSettings });
+      trackBarView(barSettings.id, "inline");
+    });
+  }
+
+  // Place all drawer bars inside the cart drawer.
+  function placeBarInDrawer() {
+    if (window.__fsbCartDrawerOwner && window.__fsbCartDrawerOwner !== root.id) {
+      const activeOwner = document.getElementById(window.__fsbCartDrawerOwner);
+      if (activeOwner) return;
+    }
+
+    window.__fsbCartDrawerOwner = root.id;
+
+    const drawer = findCartDrawer();
+    const template = getTemplateNode();
+
+    // Check if drawer bars are already present and connected
+    const allConnected =
+      drawerBars.length === drawerSettingsArray.length &&
+      drawerBars.length > 0 &&
+      drawerBars.every((item) => item.node && item.node.isConnected);
+
+    if (allConnected) {
+      return;
+    }
+
+    // Clean existing drawer bars
+    drawerBars.forEach((item) => {
+      clearUpsellInterval(item.node);
+      item.node.remove();
+    });
+    drawerBars = [];
+
+    // Remove any stale drawer bars
+    document.querySelectorAll('[data-fsb-cart-drawer="true"]').forEach((el) => {
+      el.remove();
+    });
+
+    if (!drawer || !template || drawerSettingsArray.length === 0) {
+      return;
+    }
+
+    const target = findDrawerTarget(drawer);
+
+    const created = [];
+    drawerSettingsArray.forEach((barSettings, index) => {
+      const node = template.cloneNode(true);
+      node.id = root.id + "-CartDrawer-" + (barSettings.id || index);
+      node.removeAttribute("data-fsb-initialized");
+      node.setAttribute("data-fsb-cart-drawer", "true");
+      node.dataset.fsbBarId = barSettings.id || String(index);
+      node.style.display = "block";
+
+      target.prepend(node);
+      configureBar(node, barSettings);
+      attachBarClickTracking(node, barSettings.id);
+
+      created.push({ node, settings: barSettings });
+      trackBarView(barSettings.id, "cart_drawer");
+    });
+
+    // Fix array order so created[0] matches drawerSettingsArray[0]
+    drawerBars = created.reverse();
+  }
+
+  async function updateProgress() {
+    try {
+      const cart = await getCart();
+      lastCartSignature = getCartSignature(cart);
+      if (lastItemCount === null && cart && typeof cart.item_count === "number") {
+        lastItemCount = cart.item_count;
+      }
+
+      inlineBars.forEach((item) => {
+        if (item.node && item.node.isConnected && item.settings) {
+          renderProgress(cart, item.node, item.settings);
+        }
+      });
+
+      drawerBars.forEach((item) => {
+        if (item.node && item.node.isConnected && item.settings) {
+          renderProgress(cart, item.node, item.settings);
+        }
+      });
+    } catch (error) {
+      console.error("Cart update error:", error);
+    }
+  }
+
+  async function loadDrawerSettings() {
+    try {
+      const response = await fetch(
+        "/apps/free-shipping?position=Cart+drawer&_=" + Date.now(),
+        {
+          credentials: "same-origin",
+          cache: "no-store"
+        }
+      );
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const rawBars = Array.isArray(data.bars) ? data.bars : (data.enabled ? [data] : []);
+
+     drawerSettingsArray = rawBars.filter((b) =>b && b.enabled && Number(b.goal) > 0 && barMatchesCountry(b) );
+
+      const newSig = JSON.stringify(
+        drawerSettingsArray.map((b) => [b.id, b.updatedAt, b.goal, b.message])
+      );
+
+      if (newSig !== lastDrawerSig) {
+        lastDrawerSig = newSig;
+
+        if (
+          drawerBars.length === drawerSettingsArray.length &&
+          drawerBars.every((item) => item.node && item.node.isConnected)
+        ) {
+          drawerBars.forEach((item, idx) => {
+            item.settings = drawerSettingsArray[idx];
+            configureBar(item.node, item.settings);
+          });
+        } else {
+          drawerBars.forEach((item) => item.node.remove());
+          drawerBars = [];
+          placeBarInDrawer();
+        }
+        await updateProgress();
+      }
+    } catch (error) {
+      console.error("Drawer settings error:", error);
+    }
+  }
+
+  async function checkCartChanges() {
+    if (checkingCart) return;
+    checkingCart = true;
+
+    try {
+      const cart = await getCart();
+      const signature = getCartSignature(cart);
+
+      if (signature !== lastCartSignature) {
+        // Track normal add_to_cart only when items increase and it was NOT an upsell addition
+        if (lastItemCount !== null && cart && cart.item_count > lastItemCount && !isUpsellAdding) {
+          const itemsAdded = cart.item_count - lastItemCount;
+          const activeBars = inlineBars.length > 0 ? inlineBars : drawerBars;
+          activeBars.forEach((item) => {
+            if (item.settings && item.settings.id) {
+              trackAnalyticsEvent(item.settings.id, "add_to_cart", {
+                itemsAdded,
+                totalItems: cart.item_count
+              });
+            }
+          });
+        }
+        if (cart && typeof cart.item_count === "number") {
+          lastItemCount = cart.item_count;
+        }
+        lastCartSignature = signature;
+
+        inlineBars.forEach((item) => {
+          if (item.node && item.node.isConnected && item.settings) {
+            renderProgress(cart, item.node, item.settings);
+          }
+        });
+
+        drawerBars.forEach((item) => {
+          if (item.node && item.node.isConnected && item.settings) {
+            renderProgress(cart, item.node, item.settings);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Cart detection error:", error);
+    } finally {
+      checkingCart = false;
+    }
+  }
+
+  async function loadSettings() {
+    if (refreshingSettings) return;
+    refreshingSettings = true;
+
+    try {
+      const configuredBarId = (root.dataset.configuredBarId || "").trim();
+      const configuredPlacement = (root.dataset.configuredPlacement || "auto").trim();
+
+      let resolvedPosition = configuredPlacement;
+      if (resolvedPosition === "auto" || !resolvedPosition) {
+        resolvedPosition = pageType === "product" ? "Product page" : "Announcement bar";
+      }
+
+      const isCartDrawerOnly = configuredPlacement === "Cart drawer" && !configuredBarId;
+
+      if (isCartDrawerOnly) {
+        renderInlineBars([]);
+        await loadDrawerSettings();
+        placeBarInDrawer();
+        await updateProgress();
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (configuredBarId) {
+        params.set("bar_id", configuredBarId);
+      }
+      if (resolvedPosition) {
+        params.set("position", resolvedPosition);
+      }
+      params.set("_", Date.now().toString());
+
+      const [pageRes] = await Promise.all([
+        fetch("/apps/free-shipping?" + params.toString(), {
+          credentials: "same-origin",
+          cache: "no-store"
+        }),
+        loadDrawerSettings()
+      ]);
+
+      if (pageRes && pageRes.ok) {
+        const data = await pageRes.json();
+        const rawBars = Array.isArray(data.bars) ? data.bars : (data.enabled ? [data] : []);
+
+        let validBars = rawBars.filter((b) => b && b.enabled && Number(b.goal) > 0 && barMatchesCountry(b));
+
+        if (!configuredBarId) {
+          validBars = validBars.filter((b) =>
+            barMatchesPlacement(b, configuredPlacement)
+          );
+        }
+
+        const newSig = JSON.stringify(
+          validBars.map((b) => [b.id, b.updatedAt, b.goal, b.message])
+        );
+
+        if (newSig !== lastInlineSig) {
+          lastInlineSig = newSig;
+          renderInlineBars(validBars);
+        } else {
+          inlineBars.forEach((item, idx) => {
+            if (validBars[idx]) {
+              item.settings = validBars[idx];
+              configureBar(item.node, item.settings);
+            }
+          });
+        }
+      } else {
+        renderInlineBars([]);
+      }
+
+      placeBarInDrawer();
+      await updateProgress();
+
+    } catch (error) {
+      console.error("Settings refresh error:", error);
+    } finally {
+      refreshingSettings = false;
+    }
+  }
+
+  async function initialize() {
+    try {
+      await loadSettings();
+
+      observer = new MutationObserver(() => {
+        if (updateTimer) {
+          clearTimeout(updateTimer);
+        }
+
+        updateTimer = setTimeout(() => {
+          placeBarInDrawer();
+          updateProgress();
+        }, 100);
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+
+      setInterval(checkCartChanges, 1000);
+      setInterval(loadSettings, 5000);
+
+      document.addEventListener("cart:updated", checkCartChanges);
+      document.addEventListener("cart:change", checkCartChanges);
+      document.addEventListener("cart:refresh", checkCartChanges);
+      document.addEventListener("cart-drawer:open", () => {
+        placeBarInDrawer();
+        updateProgress();
+      });
+
+      // Handle cart drawer triggers across themes (Dawn, etc.)
+      document.addEventListener("click", (e) => {
+        if (e.target && e.target.closest('a[href*="/cart"], #cart-icon-bubble, [data-cart-drawer-trigger], .header__icon--cart, [aria-controls="CartDrawer"]')) {
+          setTimeout(() => {
+            placeBarInDrawer();
+            updateProgress();
+          }, 50);
+          setTimeout(() => {
+            placeBarInDrawer();
+            updateProgress();
+          }, 300);
+        }
+      }, true);
+
+    } catch (error) {
+      console.error("Free Shipping Booster:", error);
+    }
+  }
+
+  initialize();
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Free Shipping Bar",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "bar_id",
+      "label": "Free Shipping Bar ID (Optional)",
+      "info": "Leave blank to match automatically by placement. Enter a specific Bar ID from your app dashboard to show that exact bar."
+    },
+    {
+      "type": "select",
+      "id": "placement",
+      "label": "Display placement",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Automatic (by page type)"
+        },
+        {
+          "value": "Announcement bar",
+          "label": "Announcement bar"
+        },
+        {
+          "value": "Product page",
+          "label": "Product page"
+        },
+        {
+          "value": "Cart drawer",
+          "label": "Cart drawer"
+        }
+      ],
+      "default": "auto",
+      "info": "Explicit position used for automatic bar matching when Bar ID is blank."
+    }
+  ]
+}
+{% endschema %}
